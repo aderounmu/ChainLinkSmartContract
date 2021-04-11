@@ -1,147 +1,85 @@
-import React, { Component } from "react";
-import dai from "../dai.png";
-import chainlink from "../chainlink.png";
-import dappImage from "../dapp.png";
+import React, { useState} from 'react';
+import PayPalbutton from './PayPalbutton.js';
+import Feedbar from './Feedbar.js'
 
-class Main extends Component {
-  render() {
-    return (
-      <div id="content" className="mt-3">
-        <table className="table table-borderless text-muted text-center">
-          <thead>
-            <tr>
-              <th scope="col">Staking Balance {this.props.tokenName}</th>
-              <th scope="col">Reward Balance</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                {window.web3.utils.fromWei(this.props.stakingBalance, "Ether")}{" "}
-                {this.props.tokenName}
-              </td>
-              <td>
-                {window.web3.utils.fromWei(
-                  this.props.dappTokenBalance,
-                  "Ether"
-                )}{" "}
-                DAPP
-              </td>
-            </tr>
-          </tbody>
-        </table>
+const dropdownStyle = {
+	position: "absolute", 
+	transform: "translate3d(0px, 38px, 0px)", 
+	top: "0px", 
+	right: "0px", 
+	willChange: "transform",
+	left: "100px",
+    display: "block"
+}
+function Main(props){
 
-        <div className="card mb-4">
-          <div className="card-body">
-            <form
-              className="mb-3"
-              onSubmit={(event) => {
-                event.preventDefault();
-                let amount;
-                amount = this.input.value.toString();
-                amount = window.web3.utils.toWei(amount, "Ether");
-                this.props.stakeTokens(amount, this.props.tokenAddress);
-              }}
-            >
-              <div>
-                <label className="float-left">
-                  <b>Stake Tokens</b>
-                </label>
-                <span className="float-right text-muted">
-                  {window.web3.utils.fromWei(this.props.erc20Balance, "Ether")}
-                </span>
-              </div>
-              <div className="input-group mb-4">
-                <input
-                  type="text"
-                  ref={(input) => {
-                    this.input = input;
-                  }}
-                  className="form-control form-control-lg"
-                  placeholder="0"
-                  required
-                />
-                <div className="input-group-append">
-                  <div className="input-group-text">
-                    <img src={this.props.image} height="32" alt="" />
-                    &nbsp;&nbsp;&nbsp; {this.props.tokenName}
-                  </div>
-                </div>
-              </div>
-              <div className="input-group mb-4">
-                <form>
-                  <label for="chainlink"> &nbsp; </label>
-                  <input
-                    type="button"
-                    id="chainlink"
-                    name="token"
-                    value="Chainlink"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      this.props.changeToken(
-                        "0xa36085F69e2889c224210F603D836748e7dC0088",
-                        "LINK",
-                        chainlink
-                      );
-                      //this.props.updateBalance(this.props.tokenAddress);
-                    }}
-                  />
-                  <label for="fau"> &nbsp;&nbsp;&nbsp;&nbsp;</label>
-                  <input
-                    type="button"
-                    id="fau"
-                    name="token"
-                    value="fau"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      this.props.changeToken(
-                        "0xfab46e002bbf0b4509813474841e0716e6730136",
-                        "FAU",
-                        dai
-                      );
-                      //this.props.updateBalance(this.props.tokenAddress);
-                    }}
-                  />
-                  <label for="dapptoken"> &nbsp;&nbsp;&nbsp; &nbsp;</label>
-                  <input
-                    type="button"
-                    id="dapptoken"
-                    name="token"
-                    value="dapptoken"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      this.props.changeToken(
-                        this.props.dappTokenAddress,
-                        "DAPP",
-                        dappImage
-                      );
-                      //this.props.updateBalance(this.props.tokenAddress);
-                    }}
-                  />
-                </form>
-              </div>
-              <button
-                type="submit"
-                className="btn btn-primary btn-block btn-lg"
-              >
-                STAKE!
-              </button>
-            </form>
-            <button
-              type="submit"
-              className="btn btn-link btn-block btn-sm"
-              onClick={(event) => {
-                event.preventDefault();
-                this.props.unstakeTokens(this.props.tokenAddress);
-              }}
-            >
-              UN-STAKE...
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+	const [showDropDown , setShowDropDown] = useState(false)
+
+	let drop_item = props.prices.map((value) => <button key={value.token} onClick={()=>props.changeToken(value.token)} className="dropdown-item">{value.name}</button> )
+
+let get_calculate = (value) =>{
+	if(value == "StormNGN"){
+		return props.currentAmount * props.currentTokenPrice
+	}else{
+		return props.currentAmount / props.currentTokenPrice  
+	}
 }
 
-export default Main;
+return (
+
+
+	<div className="main_body w-100 mb-3">
+		<div className = "container mt-6 w-100">
+
+			<div className="row justify-content-center">
+				<div className="col-10 col-sm-7 align-self-center">
+					<Feedbar prices = {props.prices} />
+
+					<div className="px-3 my-3 shadow rounded">
+						<div className="py-4">
+							<div className="input-group mb-3">
+								<div className="input-group-prepend">
+								    <span className="input-group-text" id="basic-addon1">$</span>
+								</div>
+								<input
+				                  type="text"
+				                  className="form-control form-control-lg"
+				                  placeholder="Your Amount"
+				                  onChange={props.onChangeAmount}
+				                  aria-label="Amount" aria-describedby="basic-addon1"
+				                  required
+				                />
+				                <div className="input-group-append">
+							    	<button className="btn btn-outline-secondary dropdown-toggle" onClick={()=>setShowDropDown(!showDropDown)} type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							    		{props.currentName}
+							    	</button>
+
+							    	{!showDropDown ? ' ':<div className="dropdown-menu" style={dropdownStyle}>
+								      {drop_item}
+								    </div>}
+							  </div>	
+			                </div>
+		                	<div className="py-3 font-weight-bold text-right"> You get {get_calculate(props.currentName)} amount of {props.currentName} </div>
+			                { !props.showButton ?
+			                <div className="py-3">
+			                	<button type="button" onClick={()=>props.setShowButton(true)} className="btn btn-success btn-lg btn-block">BUY</button>
+			                </div>:
+			                <div>
+			                	<PayPalbutton buyToken={props.buyToken} amount={props.currentAmount}/>
+			                	<div className="py-3">
+			                		<button type="button" onClick={()=>props.setShowButton(false)} className="btn btn-secondary btn-lg btn-block">CANCEL</button>
+			                	</div>
+			                </div>	
+			            	}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+)
+
+}
+
+export default Main

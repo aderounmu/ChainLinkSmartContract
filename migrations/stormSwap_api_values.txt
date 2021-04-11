@@ -1,0 +1,8 @@
+orderurl = "https://chainlink21-pay-api.herokuapp.com/check/order/"; 
+NGNrateurl = "https://chainlink21-pay-api.herokuapp.com/check/naira/";
+oracle = 0x3A56aE4a2831C3d3514b5D7Af5578E45eBDb7a40;
+tran_jobId = "187bb80e5ee74a139734cac7475f3c6e" ;
+NGN_jobId = "3b7ca0d48c7a4b2da9268456665d11ae";
+
+
+

@@ -1,208 +1,255 @@
-import React, { Component } from "react"
+import React ,{useState,useEffect} from 'react'
 import Web3 from "web3"
-import DappToken from "../abis/DappToken.json"
-import TokenFarm from "../abis/TokenFarm.json"
+import StormNGNToken from "../abis/StormNGNToken.json"
+import StormSwap from "../abis/StormSwap.json"
 import ERC20 from "../abis/ERC20.json"
-import Navbar from "./Navbar"
+
 import Main from "./Main"
-import "./App.css"
+import Loading from "./Loading"
+import Navbar from "./Navbar"
+import Intialoverlay from "./Intialoverlay"
+
 import chainlink from "../chainlink.png"
+import "./App.css"
+//import Feedbar from "./Feedbar"
 
-class App extends Component {
-  async componentWillMount() {
-    await this.loadWeb3()
-    await this.loadBlockchainData()
-  }
+function App(props){
 
-  async changeToken(address, name, tokenImage) {
-    await this.setState({ image: tokenImage })
-    await this.setState({ tokenAddress: address })
-    await this.setState({ tokenName: name })
-    await this.updateBalance(address).then(this.render())
-  }
+	//States
+	const [loading, setLoading] = useState(true)
+	const [loadingIntialPrice, setLoadingIntialPrice] = useState(true) //set to true later
+	const[prices, setPrices] = useState({})
+	const [account, setAccount] = useState("0x0000000000000000000000000000000000000000")
+	const [currentTokenAddress, setCurrentTokenAddress] = useState("0x01be23585060835e02b77ef475b0cc51aa1e0709")
+	const [currentName, setCurrentName] = useState("Link")
+	const [currentAmount, setCurrentAmount] = useState(0)
+	const [currentTokenPrice,setCurrentTokenPrice] = useState(0)
+	//const [erc20Token, setErc20Token] = useState()
+	const [stormNGN, setStormNGN] = useState({})
+	const [stormSwapApp, setStormSwapApp] = useState({})
+	const [showButton, setShowButton] = useState(false)
+	const [numberOfTokens, setNumberOfTokens] = useState("1")
+	const [listOfTokens, setListofTokens] = useState([])
+	const [tokenPrices,setTokenPrice] = useState([])
+	const [lastOrderID,setLastOrderID] = useState("")
+	
 
-  async updateBalance(address) {
-    const web3 = window.web3
-    const erc20 = new web3.eth.Contract(ERC20.abi, this.state.tokenAddress)
-    await this.setState({ erc20 })
-    let erc20Balance = await erc20.methods.balanceOf(this.state.account).call()
-    await this.setState({ erc20Balance: erc20Balance.toString() })
-    await this.updateStakingBalance()
-  }
+	// to be done before anything loads
+	useEffect(()=>{
+		( async () =>{
 
-  async updateStakingBalance() {
-    const web3 = window.web3
-    const networkId = await web3.eth.net.getId()
-    const tokenFarmData = TokenFarm.networks[networkId]
-    const tokenFarm = new web3.eth.Contract(
-      TokenFarm.abi,
-      tokenFarmData.address
-    )
-    let stakingBalance = await tokenFarm.methods
-      .stakingBalance(this.state.tokenAddress, this.state.account)
-      .call()
-    this.setState({ stakingBalance: stakingBalance.toString() })
-  }
+			await loadWeb3()
+			await loadBlockchainData()
 
-  async loadBlockchainData() {
-    const web3 = window.web3
+		})()
+	},[])
 
-    const accounts = await web3.eth.getAccounts()
-    this.setState({ account: accounts[0] })
-    this.setState({
-      tokenAddress: "0xa36085F69e2889c224210F603D836748e7dC0088",
-    })
-    this.setState({ image: chainlink })
-    this.setState({ tokenName: "LINK" })
+	let buyToken = async (orderID) => {
+		setLoading(true)
+		const web3 = window.web3
+		let Amount = String(currentAmount)
+		Amount = web3.utils.toWei(Amount,"ether")
+		let sender = account
+		let token = currentTokenAddress
+		let order_id = orderID
+		try{
+			
+			await stormSwapApp.methods.buyToken(Amount,token,order_id).send({from: sender})
+		}catch(err){
+			console.log(err)
+		}
+		console.log({order_id,Amount,sender,token})
+		setLoading(false)
 
-    const networkId = await web3.eth.net.getId()
+	}
 
-    // Load DAI as the starting default Token Data
-    // const daiTokenData = DaiToken.networks[networkId];
-    const erc20 = new web3.eth.Contract(ERC20.abi, this.state.tokenAddress)
-    this.setState({ erc20 })
-    let erc20Balance = await erc20.methods.balanceOf(this.state.account).call()
-    this.setState({ erc20Balance: erc20Balance.toString() })
+	let handleInputChange = (event) =>{
+		setCurrentAmount(event.target.value)
+	}
 
-    // Load DappToken
-    const dappTokenData = DappToken.networks[networkId]
-    if (dappTokenData) {
-      const dappToken = new web3.eth.Contract(
-        DappToken.abi,
-        dappTokenData.address
-      )
-      this.setState({ dappTokenAddress: dappTokenData.address })
-      this.setState({ dappToken })
-      let dappTokenBalance = await dappToken.methods
-        .balanceOf(this.state.account)
-        .call()
-      this.setState({ dappTokenBalance: dappTokenBalance.toString() })
-    } else {
-      window.alert("DappToken contract not deployed to detected network.")
-    }
+	let changeToken = async(value) =>{
 
-    // Load TokenFarm
-    const tokenFarmData = TokenFarm.networks[networkId]
-    if (tokenFarmData) {
-      const tokenFarm = new web3.eth.Contract(
-        TokenFarm.abi,
-        tokenFarmData.address
-      )
-      this.setState({ tokenFarm })
-      this.updateStakingBalance()
-    } else {
-      window.alert("TokenFarm contract not deployed to detected network.")
-    }
+		setCurrentTokenAddress(value)
+		let selectToken = tokenPrices.filter((item) => item.token === value)[0]
+		setCurrentName(selectToken.name)
+		let priceFloat = parseFloat(selectToken.price)
+		setCurrentTokenPrice(priceFloat)
 
-    this.setState({ loading: false })
-  }
+	}
 
-  async loadWeb3() {
-    if (window.ethereum) {
-      window.web3 = new Web3(window.ethereum)
-      await window.ethereum.enable()
-    } else if (window.web3) {
-      window.web3 = new Web3(window.web3.currentProvider)
-    } else {
-      window.alert(
-        "Non-Ethereum browser detected. You should consider trying MetaMask!"
-      )
-    }
-  }
+	let loadPrices = async() => {
+		setLoadingIntialPrice(false)
+		setLoading(true)
+		try{
+		const web3 = window.web3
+		const networkId = await web3.eth.net.getId()
 
-  stakeTokens = (amount, tokenAddress) => {
-    this.setState({ loading: true })
-    this.state.erc20.methods
-      .approve(this.state.tokenFarm._address, amount)
-      .send({ from: this.state.account })
-      .on("transactionHash", (hash) => {
-        this.state.tokenFarm.methods
-          .stakeTokens(amount, tokenAddress)
-          .send({ from: this.state.account })
-          .on("transactionHash", (hash) => {
-            this.setState({ loading: false })
-          })
-      })
-  };
+		//set all tokens the prices
+		      	let arrayofTokens = [];
+		    	let numberAllowedToken = await stormSwapApp.methods.countAllowedTokens().call()
+		    	let cnt = parseInt(numberAllowedToken) + 1
+				setNumberOfTokens(numberAllowedToken)
 
-  unstakeTokens = (address) => {
-    this.setState({ loading: true })
-    this.state.tokenFarm.methods
-      .unstakeTokens(address)
-      .send({ from: this.state.account })
-      .on("transactionHash", (hash) => {
-        this.setState({ loading: false })
-      })
-  };
 
-  constructor(props) {
-    super(props)
-    this.state = {
-      account: "0x0",
-      erc20: {},
-      dappToken: {},
-      dappTokenAddress: "",
-      tokenFarm: {},
-      erc20Balance: "0",
-      dappTokenBalance: "0",
-      stakingBalance: "0",
-      loading: true,
-      image: chainlink,
-      tokenName: "LINK",
-    }
-  }
+				const o_arr = [ ...listOfTokens]
+		    	const o_obj = [ ...tokenPrices]
+		    	
+		    	for (var i = 1; i < cnt; i++) {
+		    		let price = 0
+		    		let name = ""
+		    		switch(i){
+		    			case 1:
+		    				name = "StormNGN"
+		    			break; 
+		    			case 2:
+		    				name="Link"
+		    			break;
+		    			case 3: 
+		    				name ="Dai"
+		    			default:
+		    		}
+		    		let token = await stormSwapApp.methods.allowedTokensIndexForLooop(i).call()
+		    		
+		    		o_arr.push(token)
+		    		
 
-  render() {
-    let content
-    if (this.state.loading) {
-      content = (
-        <p id="loader" className="text-center">
-          Loading...
-        </p>
-      )
-    } else {
-      content = (
-        <Main
-          erc20Balance={this.state.erc20Balance}
-          dappTokenBalance={this.state.dappTokenBalance}
-          dappTokenAddress={this.state.dappTokenAddress}
-          stakingBalance={this.state.stakingBalance}
-          stakeTokens={this.stakeTokens.bind(this)}
-          unstakeTokens={this.unstakeTokens.bind(this)}
-          tokenName={this.state.tokenName}
-          image={this.state.image}
-          tokenAddress={this.state.tokenAddress}
-          changeToken={this.changeToken.bind(this)}
-          updateBalance={this.updateBalance.bind(this)}
-        />
-      )
-    }
+		    		console.log(token)
 
-    return (
-      <div>
-        <Navbar account={this.state.account} />
-        <div className="container-fluid mt-5">
-          <div className="row">
-            <main
-              role="main"
-              className="col-lg-12 ml-auto mr-auto"
-              style={{ maxWidth: "600px" }}
-            >
-              <div className="content mr-auto ml-auto">
-                <a
-                  href="https://alphachain.io"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                ></a>
+		    		if(token === StormNGNToken.networks[networkId].address){
+		    			console.log(account)
+		    			await stormSwapApp.methods.requestNGNRate().send({from: account})
+		    			await new Promise(resolve => setTimeout(resolve,6000))
+		    			price = await stormSwapApp.methods.currentNGN_rate().call()
+		    		}else{
+		    			price = await stormSwapApp.methods.getTokenUSDPrice(token).call()
+		    		}
 
-                {content}
-              </div>
-            </main>
-          </div>
-        </div>
-      </div>
-    )
-  }
+		    		if(currentName === name ){
+		    			setCurrentTokenPrice(parseFloat(web3.utils.fromWei(price,'ether')))
+		    		}
+
+		    		o_obj.push({
+		    			name: name,
+		    			token: token,
+		    			price: web3.utils.fromWei(price,'ether')
+		    		})
+		    		console.log({
+		    			name: name,
+		    			token: token,
+		    			price: web3.utils.fromWei(price,'ether')
+		    		})
+		    		
+		    	}
+		    	setTokenPrice(o_obj)
+		    	setListofTokens(o_arr)
+		}catch(err){
+			console.log(err)
+		}
+		setLoading(false)
+
+	}
+
+	// loading web3
+	let loadWeb3 = async () =>{
+		if (window.ethereum) {
+      		window.web3 = new Web3(window.ethereum)
+      		await window.ethereum.enable()
+    	} else if (window.web3) {
+      		window.web3 = new Web3(window.web3.currentProvider)
+	    } else {
+		    window.alert(
+		       "Non-Ethereum browser detected. You should consider trying MetaMask!"
+		    )
+	    }
+	}
+
+	//loading all contract data
+
+	let loadBlockchainData = async() =>{
+		try{
+		const web3 = window.web3
+		const accounts = await web3.eth.getAccounts()
+		setAccount(accounts[0])
+
+		const erc20 = new web3.eth.Contract(ERC20.abi,currentTokenAddress)
+
+		// let erc20Balance = await erc20.methods.balanceOf(account).call()
+		
+		// setCurrentBalance(erc20Balance.toString())
+
+		//Getting the network ID
+		const networkId = await web3.eth.net.getId()
+
+		//loading SwarmToken
+		const stormNGNTokenData = StormNGNToken.networks[networkId]
+	    if (stormNGNTokenData) {
+	      const stormNGNToken = new web3.eth.Contract(
+	        StormNGNToken.abi,
+	        stormNGNTokenData.address
+	      )
+	      setStormNGN({
+	      	...stormNGNToken
+	      })
+	       setCurrentTokenAddress(stormNGNTokenData.address)
+	       setCurrentName("StormNGN")
+	      
+	      
+
+
+
+	    } else {
+	      window.alert("StormNGN contract not deployed to detected network.")
+	    }
+
+
+	    //loading SwarmSwap
+	    const stormSwapData = StormSwap.networks[networkId]
+	    if (stormSwapData) {
+	      const stormSwap = new web3.eth.Contract(
+	        StormSwap.abi,
+	        stormSwapData.address
+	      )
+	      setStormSwapApp({...stormSwap})
+	      	
+	    } else {
+	      window.alert("StormSwap contract not deployed to detected network.")
+	    }
+		}catch(err){
+			console.log(err)
+		}
+
+	    setLoading(false)
+
+	}
+
+	 
+	return(
+
+		<div>
+		<Navbar account={account} />
+		{
+			loading ? 
+			<Loading/> : <div> {
+				loadingIntialPrice ? <Intialoverlay startPrice={() => loadPrices()}/>
+				:<Main
+				account={account}
+				currentAmount= {currentAmount}
+				showButton = {showButton}
+				prices={tokenPrices}
+				setShowButton = { (value) => setShowButton(value)}
+				changeToken = {(value) => changeToken(value)}
+				currentName={currentName}
+				onChangeAmount={handleInputChange}
+				currentTokenPrice={currentTokenPrice}
+				buyToken={buyToken}
+				/>
+			}</div>
+		}
+		</div>
+
+	) 
+		
+	
 }
 
 export default App
