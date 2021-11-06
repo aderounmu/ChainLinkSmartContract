@@ -1,10 +1,22 @@
-# chainlink_defi
+# SwormSwap Exchange Fiat to Crypto
 
-This repo allows you to stake your FAU/LINK/DAPP or any accepted ERC20 and receive DAPP token as a reward (and can do yeild farming). It gets the Kovan price feed of the ERC with ETH to calculate value. 
-
-To get started clone this repo.
+SwormSwap Exchange Fait to Crypto is an exchange that convert fiat directly to 
+to cryptocurrency, leveraging chainlink and paypal. The user can get Ethereum, StormNG (The Native Token of the platform) or Link by using their Credit Cards or Paypal accounts.
 
 # Quickstart
+
+
+Install the dependencies 
+```
+yarn install
+```
+Start the project 
+```
+yarn start 
+```
+The frontend and already deployed smart contract would be avaliable
+
+# Installation
 Set your `MNEMONIC` and `RPC_URL` 
 ```
 export MNEMONIC="apple, cheese, etc...."
@@ -15,12 +27,7 @@ You will need Truffle installed too
 Then run:
 ```
 yarn
-truffle migrate --reset --network live
+truffle migrate --reset --network rinkeby
 yarn start
 ```
-You can now stake and unstake your mDAI. Once you have some staked, you can issue tokens. 
-
-To issue tokens run
-```
-truffle exec scripts/issue-tokens.js
-```
+A paypal developer account and intermediate server would be required

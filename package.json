@@ -1,5 +1,5 @@
 {
-  "name": "SwarmExchange",
+  "name": "swarmexchange",
   "version": "0.1.0",
   "description": "A simple token exchange app that converts fiat directly to ERC20 Tokens",
   "author": "gregory@dappuniversity.com",
@@ -40,5 +40,18 @@
     "not dead",
     "not ie <= 11",
     "not op_mini all"
-  ]
+  ],
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aderounmu/ChainLinkSmartContract.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aderounmu/ChainLinkSmartContract/issues"
+  },
+  "homepage": "https://github.com/aderounmu/ChainLinkSmartContract#readme"
 }
